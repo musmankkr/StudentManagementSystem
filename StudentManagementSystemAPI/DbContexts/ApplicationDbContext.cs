@@ -10,13 +10,16 @@ namespace StudentManagementSystemAPI.DbContexts
         {
         }
 
-        public DbSet<StudentModel> Students { get; set; }
-        public DbSet<GradeModel> Grades { get; set; }
-        public DbSet<CourseModel> Courses { get; set; }
-
         public async Task<int> SaveChanges()
         {
             return await base.SaveChangesAsync();
         }
+
+        public DbSet<StudentModel> Students { get; set; }
+        public DbSet<GradeModel> Grades { get; set; }
+        public DbSet<CourseModel> Courses { get; set; }
+        public DbSet<AttendanceModel> Attendance { get; set; }
+
+        
     }
 }

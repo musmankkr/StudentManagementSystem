@@ -2,9 +2,11 @@
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using StudentManagementSystemAPI.Data;
+using StudentManagementSystemAPI.DbContexts;
 using StudentManagementSystemAPI.Models;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace StudentManagementSystemAPI.Controllers
 {
@@ -12,11 +14,18 @@ namespace StudentManagementSystemAPI.Controllers
     [ApiController]
     public class courseController : ControllerBase
     {
+        private IApplicationDbContext _context;
+
+        public courseController(IApplicationDbContext context)
+        {
+            _context = context;
+        }
+
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         public ActionResult<IEnumerable<CourseModel>> GetCourses()
         {
-            return Ok(CourseStore.CourseList);
+            return Ok(_context.Courses);
         }
 
         [HttpGet("{id:int}", Name = "GetCourse")]
@@ -30,7 +39,7 @@ namespace StudentManagementSystemAPI.Controllers
                 return BadRequest();
             }
 
-            var course = CourseStore.CourseList.FirstOrDefault(u => u.CourseId == id);
+            var course = _context.Courses.FirstOrDefault(u => u.CourseId == id);
 
             if (course == null)
             {
@@ -44,9 +53,11 @@ namespace StudentManagementSystemAPI.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<CourseModel> CreateCourse(CourseModel course)
+        public async Task<ActionResult<CourseModel>> CreateCourse(CourseModel course)
         {
-            if (CourseStore.CourseList.FirstOrDefault(u => u.CourseName.ToLower() == course.CourseName.ToLower()) != null)
+            var obj = _context.Courses.FirstOrDefault(u => u.CourseName.ToLower() == course.CourseName.ToLower());
+
+            if ( obj != null)
             {
                 ModelState.AddModelError("Custom Error", "course alreay exists");
                 return BadRequest(ModelState);
@@ -59,8 +70,8 @@ namespace StudentManagementSystemAPI.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
-            course.CourseId = CourseStore.CourseList.OrderByDescending(u => u.CourseId).FirstOrDefault().CourseId + 1;
-            CourseStore.CourseList.Add(course);
+            _context.Courses.Add(course);
+            await _context.SaveChanges();
             return CreatedAtRoute("Getcourse", new { id = course.CourseId }, course);
         }
 
@@ -68,19 +79,20 @@ namespace StudentManagementSystemAPI.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public IActionResult DeleteCourse(int id)
+        public async Task<IActionResult>DeleteCourse(int id)
         {
             if (id == 0)
             {
                 return BadRequest();
             }
-            var course = CourseStore.CourseList.FirstOrDefault(u => u.CourseId == id);
+            var course = _context.Courses.FirstOrDefault(u => u.CourseId == id);
 
             if (course == null)
             {
                 return NotFound();
             }
             CourseStore.CourseList.Remove(course);
+            await _context.SaveChanges();
             return NoContent();
         }
 
@@ -95,12 +107,11 @@ namespace StudentManagementSystemAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            var _course = CourseStore.CourseList.FirstOrDefault(u => u.CourseId == id);
+            var _course = _context.Courses.FirstOrDefault(u => u.CourseId == id);
 
             _course.CourseName = course.CourseName;
             _course.CourseCode = course.CourseCode;
             _course.CourseCredit = course.CourseCredit;
-
 
             return NoContent();
         }
@@ -114,7 +125,7 @@ namespace StudentManagementSystemAPI.Controllers
             {
                 return BadRequest();
             }
-            var course = CourseStore.CourseList.FirstOrDefault(u => u.CourseId == id);
+            var course = _context.Courses.FirstOrDefault(u => u.CourseId == id);
             if (course == null)
             {
                 return BadRequest();

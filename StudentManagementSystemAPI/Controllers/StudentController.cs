@@ -1,10 +1,13 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using StudentManagementSystemAPI.Data;
+using StudentManagementSystemAPI.DbContexts;
 using StudentManagementSystemAPI.Models;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace StudentManagementSystemAPI.Controllers
 {
@@ -12,11 +15,19 @@ namespace StudentManagementSystemAPI.Controllers
     [ApiController]
     public class StudentController : ControllerBase
     {
+        private IApplicationDbContext _context;
+        public StudentController(IApplicationDbContext context)
+        {
+            _context = context;
+        }
+
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public ActionResult<IEnumerable<StudentModel>> GetStudents()
+        public async Task<ActionResult<IEnumerable<StudentModel>>> GetStudents()
         {
-            return Ok(StudentStore.StudentList);
+            var students = await _context.Students.ToListAsync();
+            if (students == null) return NotFound();
+            return Ok(students);
         }
 
         [HttpGet("{id:int}", Name = "GetStudent")]
@@ -30,7 +41,7 @@ namespace StudentManagementSystemAPI.Controllers
                 return BadRequest();
             }
 
-            var student = StudentStore.StudentList.FirstOrDefault(u => u.Id == id);
+            var student = _context.Students.FirstOrDefault(u => u.Id == id);
 
             if (student == null)
             {
@@ -44,9 +55,10 @@ namespace StudentManagementSystemAPI.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public ActionResult<StudentModel> CreateStudent(StudentModel student)
+        public async Task<ActionResult<StudentModel>> CreateStudent(StudentModel student)
         {
-            if (StudentStore.StudentList.FirstOrDefault(u => u.Firstname.ToLower() == student.Firstname.ToLower()) != null)
+            var obj = _context.Students.Where(u => u.Firstname.ToLower() == student.Firstname.ToLower()).FirstOrDefault();
+            if ( obj != null)
             {
                 ModelState.AddModelError("Custom Error", "Student alreay exists");
                 return BadRequest(ModelState);
@@ -59,8 +71,8 @@ namespace StudentManagementSystemAPI.Controllers
             {
                 return StatusCode(StatusCodes.Status500InternalServerError);
             }
-            student.Id = StudentStore.StudentList.OrderByDescending(u => u.Id).FirstOrDefault().Id + 1;
-            StudentStore.StudentList.Add(student);
+            _context.Students.Add(student);
+            await _context.SaveChanges();
             return CreatedAtRoute("Getstudent", new { id = student.Id }, student);
         }
 
@@ -74,7 +86,7 @@ namespace StudentManagementSystemAPI.Controllers
             {
                 return BadRequest();
             }
-            var student = StudentStore.StudentList.FirstOrDefault(u => u.Id == id);
+            var student = _context.Students.FirstOrDefault(u => u.Id == id);
 
             if (student == null)
             {
@@ -86,7 +98,7 @@ namespace StudentManagementSystemAPI.Controllers
 
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [HttpPut("({id:int})", Name = "DeleteStudent")]
+        [HttpPut("({id:int})", Name = "UpdateStudent")]
         public IActionResult Updatestudent(int id, [FromBody] StudentModel student)
         {
             if (id == 0 || id != student.Id)
@@ -95,13 +107,12 @@ namespace StudentManagementSystemAPI.Controllers
                 return BadRequest(ModelState);
             }
 
-            var _student = StudentStore.StudentList.FirstOrDefault(u => u.Id == id);
+            var _student = _context.Students.FirstOrDefault(u => u.Id == id);
 
             _student.Firstname = student.Firstname;
             _student.Dateofbirth = student.Dateofbirth;
             _student.Gender = student.Gender;
               
-
             return NoContent();
         }
 
@@ -114,7 +125,7 @@ namespace StudentManagementSystemAPI.Controllers
             {
                 return BadRequest();
             }
-            var student = StudentStore.StudentList.FirstOrDefault(u => u.Id == id);
+            var student = _context.Students.FirstOrDefault(u => u.Id == id);
             if (student == null)
             {
                 return BadRequest();
