@@ -32,6 +32,15 @@ namespace StudentManagementSystemAPI
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection"),
                     b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)));
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
+            });
+
             services.AddScoped<IApplicationDbContext>(provider => provider.GetService<ApplicationDbContext>());
             services.AddControllers();
 
@@ -48,6 +57,14 @@ namespace StudentManagementSystemAPI
             {
                 app.UseDeveloperExceptionPage();
             }
+            
+
+            app.UseHttpsRedirection();
+
+            app.UseRouting();
+
+            app.UseCors("CorsPolicy");
+
             // Enable middleware to serve generated Swagger as a JSON endpoint.
             app.UseSwagger();
 
@@ -58,10 +75,6 @@ namespace StudentManagementSystemAPI
                 c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
                 c.RoutePrefix = "swagger";
             });
-
-            app.UseHttpsRedirection();
-
-            app.UseRouting();
 
             app.UseAuthorization();
 

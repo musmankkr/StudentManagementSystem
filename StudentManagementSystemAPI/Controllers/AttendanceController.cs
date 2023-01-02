@@ -57,7 +57,7 @@ namespace StudentManagementSystemAPI.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AttendanceDetail>> GetAttendanceWithStudentAndCourse(int studentId, int courseId)
+        public async Task<ActionResult<List<AttendanceViewModel>>> GetAttendanceWithStudentAndCourse(int studentId, int courseId)
         {
             var course = _context.Courses.Where(c => c.CourseId == courseId).FirstOrDefault();
             if (course == null)
@@ -81,7 +81,21 @@ namespace StudentManagementSystemAPI.Controllers
             attendanceDetail.student = student;
             attendanceDetail.course = course;
             attendanceDetail.attendance = attendance;
-            return Ok(attendanceDetail);
+
+            var attendanceView = new AttendanceViewModel()
+            {
+                CourseId = course.CourseId,
+                CourseName = course.CourseName,
+                Date = attendance.Date,
+                Status = attendance.Status,
+                StudentId = student.Id,
+                StudentName = $"{student.Firstname} {student.Lastname}",
+            };
+
+            var list = new List<AttendanceViewModel>();
+
+            list.Add(attendanceView);
+            return Ok(list);
         }
 
         [HttpDelete("({id:int})", Name = "DeleteAttendance")]
