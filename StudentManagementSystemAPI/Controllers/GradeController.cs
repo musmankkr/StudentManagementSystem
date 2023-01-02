@@ -114,8 +114,8 @@ namespace StudentManagementSystemAPI.Controllers
                 ModelState.AddModelError("Custom Error", "Invalid studentid");
                 return BadRequest(ModelState);
             }
-            var attendance = _context.Grades.Where(a => (a.courseId == courseId) && a.studentId == studentId).FirstOrDefault();
-            if (attendance == null)
+            var grade = _context.Grades.Where(a => (a.courseId == courseId) && a.studentId == studentId).FirstOrDefault();
+            if (grade == null)
             {
                 ModelState.AddModelError("Custom Error", "No Grade found");
                 return BadRequest(ModelState);
@@ -123,7 +123,15 @@ namespace StudentManagementSystemAPI.Controllers
             GradeDetails gradeDetail = new GradeDetails();
             gradeDetail.Student = student;
             gradeDetail.Course = course;
-            gradeDetail.Grade = attendance;
+            gradeDetail.Grade = grade;
+            var gradeView = new GradeViewModel()
+            {
+                CourseId = course.CourseId,
+                CourseName = course.CourseName,
+                Grade = grade.Grade,
+                StudentId = student.Id,
+                StudentName = $"{student.Firstname} {student.Lastname}",
+            };
             return Ok(gradeDetail);
         }
 
