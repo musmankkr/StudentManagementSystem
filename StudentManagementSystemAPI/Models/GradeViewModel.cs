@@ -12,6 +12,8 @@ namespace StudentManagementSystemAPI.Models
 
         public int CourseId { get; set; }
 
+        public string TeacherName { get; set; }
+
         public string CourseName { get; set; }
     }
 }

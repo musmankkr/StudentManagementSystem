@@ -100,7 +100,7 @@ namespace StudentManagementSystemAPI.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<AttendanceDetail>> GetGradeDetails(int studentId, int courseId)
+        public async Task<ActionResult<GradeViewModel>> GetGradeDetails(int studentId, int courseId)
         {
             var course = _context.Courses.Where(c => c.CourseId == courseId).FirstOrDefault();
             if (course == null)
@@ -129,10 +129,14 @@ namespace StudentManagementSystemAPI.Controllers
                 CourseId = course.CourseId,
                 CourseName = course.CourseName,
                 Grade = grade.Grade,
+                TeacherName = course.TeacherName,
                 StudentId = student.Id,
                 StudentName = $"{student.Firstname} {student.Lastname}",
             };
-            return Ok(gradeDetail);
+            var list = new List<GradeViewModel>();
+
+            list.Add(gradeView);
+            return Ok(gradeView);
         }
 
         [ProducesResponseType(StatusCodes.Status204NoContent)]
